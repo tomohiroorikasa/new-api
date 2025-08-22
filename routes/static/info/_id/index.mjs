@@ -71,7 +71,6 @@ const GenerateStaticHTML = (config, info) => {
       linksText += linkText + '\n'
     }
   }
-console.log(linksText)
 
   const vars = {
     title: title,
