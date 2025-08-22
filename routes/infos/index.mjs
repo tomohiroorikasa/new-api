@@ -59,8 +59,8 @@ export default async function (fastify, opts) {
         // throw new Error('Invalid Token')
       }
 
-      const config = await GetConfig(fastify)
-      if (!config.isOpen && !email) throw new Error('Need Login')
+      // const config = await GetConfig(fastify)
+      // if (!config.isOpen && !email) throw new Error('Need Login')
 
       let matches = {
         $and: [
