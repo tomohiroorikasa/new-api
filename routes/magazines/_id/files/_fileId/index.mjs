@@ -18,20 +18,20 @@ export default async function (fastify, opts) {
         currentUser = await CurrentUser(fastify, email)
       }
 
-      let info = await fastify.mongo.db
-        .collection('Infos')
+      let magazine = await fastify.mongo.db
+        .collection('Magazines')
         .findOne({
           _id: new fastify.mongo.ObjectId(req.params.id),
           // deleted: { $ne: true }
         })
-      if (!info) {
-        throw new Error('Not Found Info')
+      if (!magazine) {
+        throw new Error('Not Found Magazine')
       }
 
       const file = await fastify.mongo.db
         .collection('Files')
         .findOne({
-          infoId: info._id,
+          magazineId: magazine._id,
           _id: new fastify.mongo.ObjectId(req.params.fileId),
           // extension: fileExt
         })
@@ -75,20 +75,20 @@ export default async function (fastify, opts) {
         currentUser = await CurrentUser(fastify, email)
       }
 
-      let info = await fastify.mongo.db
-        .collection('Infos')
+      let magazine = await fastify.mongo.db
+        .collection('Magazines')
         .findOne({
           _id: new fastify.mongo.ObjectId(req.params.id),
           // deleted: { $ne: true }
         })
-      if (!info) {
-        throw new Error('Not Found Info')
+      if (!magazine) {
+        throw new Error('Not Found Magazine')
       }
 
       const file = await fastify.mongo.db
         .collection('Files')
         .findOne({
-          infoId: info._id,
+          magazineId: magazine._id,
           _id: new fastify.mongo.ObjectId(req.params.fileId),
           // extension: fileExt
         })

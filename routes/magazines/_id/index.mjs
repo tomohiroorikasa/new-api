@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from 'fs'
 
 // import sharp from "sharp"
 
-import { IsBoolean, IsNumber, Clone, FilterData, GetConfig, CurrentUser, ValidateData, RecursiveEach, AutoTags, ExtractLink, ModeratePost, ExistsFile, SaveFile, LoadFile } from "../../../lib.mjs"
+import { IsBoolean, IsNumber, Clone, FilterData, GetConfig, CurrentUser, ValidateData, RecursiveEach, ExistsFile, SaveFile, LoadFile } from "../../../lib.mjs"
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
@@ -37,7 +37,6 @@ const schema = {
   type: 1,
   title: 1,
   description: 1,
-  links: 1,
   files: 1
 }
 
@@ -90,44 +89,44 @@ export default async function (fastify, opts) {
 
       ret._id = req.params.id
 
-      let info = await fastify.mongo.db
-        .collection('Infos')
+      let magazine = await fastify.mongo.db
+        .collection('Magazines')
         .findOne({
           _id: new fastify.mongo.ObjectId(req.params.id),
           // deleted: { $ne: true }
         })
-      if (!info) {
-        throw new Error('Not Found Info')
+      if (!magazine) {
+        throw new Error('Not Found Magazine')
       }
 
-      if (info.deleted) {
+      if (magazine.deleted) {
         ret.deleted = true
-      } else if (!email && info.draft) {
+      } else if (!email && magazine.draft) {
         ret.draft = true
       } else {
         await fastify.mongo.db
-          .collection('Infos')
+          .collection('Magazines')
           .updateOne({
-            _id: info._id,
+            _id: magazine._id,
           }, {
             $inc: {
               viewsCount: 1
             }
           })
 
-        ret = FilterData(info, schema)
+        ret = FilterData(magazine, schema)
       }
 
-      if (info.postedBy) {
+      if (magazine.postedBy) {
         const user = await fastify.mongo.db
           .collection('Users')
           .findOne({
-            _id: info.postedBy,
+            _id: magazine.postedBy,
             // deleted: { $ne: true }
           })
 
         ret.PostedBy = {
-          _id: info.postedBy,
+          _id: magazine.postedBy,
         }
 
         if (user) {
@@ -152,7 +151,7 @@ export default async function (fastify, opts) {
         const filesAggregate = [
           {
             $match: {
-              infoId: ret._id,
+              magazineId: ret._id,
               _id: {
                 $in: ret.files
               },
