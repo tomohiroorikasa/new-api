@@ -1,4 +1,4 @@
-import { Clone, GetConfig, CurrentUser, LoadFile } from "../../../../../lib.mjs"
+import { Clone, GetConfig, CurrentUser, LoadFile } from "../../../lib.mjs"
 
 export default async function (fastify, opts) {
   fastify.get('/', async (req, reply) => {
@@ -18,21 +18,10 @@ export default async function (fastify, opts) {
         currentUser = await CurrentUser(fastify, email)
       }
 
-      let magazine = await fastify.mongo.db
-        .collection('Magazines')
-        .findOne({
-          _id: new fastify.mongo.ObjectId(req.params.id),
-          // deleted: { $ne: true }
-        })
-      if (!magazine) {
-        throw new Error('Not Found Magazine')
-      }
-
       const file = await fastify.mongo.db
         .collection('Files')
         .findOne({
-          magazineId: magazine._id,
-          _id: new fastify.mongo.ObjectId(req.params.fileId),
+          _id: new fastify.mongo.ObjectId(req.params.id),
           // extension: fileExt
         })
 
@@ -75,21 +64,10 @@ export default async function (fastify, opts) {
         currentUser = await CurrentUser(fastify, email)
       }
 
-      let magazine = await fastify.mongo.db
-        .collection('Magazines')
-        .findOne({
-          _id: new fastify.mongo.ObjectId(req.params.id),
-          // deleted: { $ne: true }
-        })
-      if (!magazine) {
-        throw new Error('Not Found Magazine')
-      }
-
       const file = await fastify.mongo.db
         .collection('Files')
         .findOne({
-          magazineId: magazine._id,
-          _id: new fastify.mongo.ObjectId(req.params.fileId),
+          _id: new fastify.mongo.ObjectId(req.params.id),
           // extension: fileExt
         })
 

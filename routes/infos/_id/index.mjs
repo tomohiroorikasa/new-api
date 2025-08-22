@@ -152,7 +152,6 @@ export default async function (fastify, opts) {
         const filesAggregate = [
           {
             $match: {
-              infoId: ret._id,
               _id: {
                 $in: ret.files
               },
