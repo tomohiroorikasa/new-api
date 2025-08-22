@@ -711,6 +711,19 @@ export const ReplaceText = (str, obj) => {
   return _str
 }
 
+export const ReplaceHtml = (str, obj) => {
+  let _str = str
+
+  for (let key in obj) {
+    let value = obj[key]
+
+    let re = new RegExp(`%%${key}%%`, 'g')
+    _str = _str.replace( re, value )
+  }
+
+  return _str
+}
+
 export const GenerateMessage = async (fastify, templateName, obj) => {
   let templatePathName, template, phone, message
 
