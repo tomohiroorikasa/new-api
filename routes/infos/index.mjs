@@ -25,8 +25,8 @@ const schema = {
   draft: 1,
   type: 1,
   title: 1,
-  body: 1,
-  url: 1,
+  description: 1,
+  links: 1,
 }
 
 const postRules = {
@@ -38,12 +38,11 @@ const postRules = {
     // required: true,
     maxLength: 400,
   },
-  body: {
+  description: {
     // required: true,
     maxLength: 5000,
     // isHTML: true
   },
-  url: {},
   force: {
     isBoolean: true
   },
@@ -214,8 +213,8 @@ export default async function (fastify, opts) {
         // throw new Error('Invalid Token')
       }
 
-      const config = await GetConfig(fastify)
-      if (!config.isOpen && !email) throw new Error('Need Login')
+      // const config = await GetConfig(fastify)
+      // if (!config.isOpen && !email) throw new Error('Need Login')
 
       let matches = {
         $and: [

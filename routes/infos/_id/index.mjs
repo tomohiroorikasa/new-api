@@ -36,8 +36,8 @@ const schema = {
   draft: 1,
   type: 1,
   title: 1,
-  body: 1,
-  url: 1,
+  description: 1,
+  links: 1,
   files: 1
 }
 
@@ -60,12 +60,11 @@ const patchRules = {
     // required: true,
     maxLength: 400,
   },
-  body: {
+  description: {
     // required: true,
     maxLength: 5000,
     // isHTML: true
   },
-  url: {},
   force: {
     isBoolean: true
   },
@@ -116,43 +115,19 @@ export default async function (fastify, opts) {
             }
           })
 
-        ret = FilterData(post, schema)
+        ret = FilterData(info, schema)
       }
 
-      if (post.text && !post.deleted && !post.draft) {
-        const matches = Autolinker.parse(post.text, {
-          urls: true
-        })
-        if (matches && matches.length > 0) {
-          for (const matchObj of matches) {
-            if (matchObj && matchObj.type === 'url' && matchObj.url) {
-              const link = await fastify.mongo.db
-                .collection('Links')
-                .findOne({
-                  url: matchObj.url,
-                  // deleted: { $ne: true }
-                })
-              if (link) {
-                if (!ret.Links) {
-                  ret.Links = []
-                }
-                ret.Links.push(link)
-              }
-            }
-          }
-        }
-      }
-
-      if (post.postedBy) {
+      if (info.postedBy) {
         const user = await fastify.mongo.db
           .collection('Users')
           .findOne({
-            _id: post.postedBy,
+            _id: info.postedBy,
             // deleted: { $ne: true }
           })
 
         ret.PostedBy = {
-          _id: post.postedBy,
+          _id: info.postedBy,
         }
 
         if (user) {
@@ -177,7 +152,7 @@ export default async function (fastify, opts) {
         const filesAggregate = [
           {
             $match: {
-              postId: ret._id,
+              infoId: ret._id,
               _id: {
                 $in: ret.files
               },
