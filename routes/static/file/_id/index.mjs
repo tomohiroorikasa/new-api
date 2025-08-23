@@ -15,7 +15,7 @@ export default async function (fastify, opts) {
 
       const config = await GetConfig(fastify)
 
-      if (file.thumbnailId) {
+      if (typeof req.query.thumbnail !== 'undefined' && file.thumbnailId) {
         ret = await LoadFile(String(file.thumbnailId))
       } else {
         ret = await LoadFile(String(file._id))

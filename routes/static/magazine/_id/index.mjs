@@ -57,7 +57,7 @@ const GenerateStaticHTML = (config, magazine) => {
 
   const title = `${magazine.title} on ${config.name}`
   const description = StripHtmlTags(magazine.description).slice(0, 160)
-  const url = `${baseUrl}/magazine/${magazine._id}`
+  const url = `${baseUrl}/magazine/${magazine._id}?thumbnail`
 
   // 画像がある場合のOG画像URL
   const imageUrl = magazine.Files && magazine.Files.length > 0

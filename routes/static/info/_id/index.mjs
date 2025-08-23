@@ -61,7 +61,7 @@ const GenerateStaticHTML = (config, info) => {
 
   // 画像がある場合のOG画像URL
   const imageUrl = info.Files && info.Files.length > 0
-    ? `${baseUrl}/file/${info.Files[0]._id}` // baseUrlを使用
+    ? `${baseUrl}/file/${info.Files[0]._id}?thumbnail` // baseUrlを使用
     : ''
 
   let linksText = ''

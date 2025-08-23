@@ -21,16 +21,18 @@ export default fastifyPlugin(function (fastify, opts, done) {
     credentials: true
   })
 
+  /*
   fastify.addHook('onSend', (request, reply, payload, done) => {
-    console.log('Origin:', request.headers.origin)
-    console.log('Access-Control-Allow-Origin:', reply.getHeader('Access-Control-Allow-Origin'))
+    // console.log('Origin:', request.headers.origin)
+    // console.log('Access-Control-Allow-Origin:', reply.getHeader('Access-Control-Allow-Origin'))
     done()
   })
 
   fastify.addHook('onRequest', (request, reply, done) => {
-    console.log('Origin (onRequest):', request.headers.origin)
+    // console.log('Origin (onRequest):', request.headers.origin)
     done()
   })
+  */
 
   done()
 })
