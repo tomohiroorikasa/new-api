@@ -2,7 +2,7 @@ import * as crypto from 'node:crypto'
 
 import urlJoin from 'url-join'
 
-import { IsBoolean, IsNumber, Clone, GetConfig, CurrentUser, ValidateData, RecursiveEach, AutoTags, StripHtmlTags, ExtractLink, FormatDocumentsAsString } from '../../lib.mjs'
+import { IsBoolean, IsNumber, Clone, GetConfig, ValidateData, RecursiveEach, AutoTags, StripHtmlTags, ExtractLink, FormatDocumentsAsString } from '../../lib.mjs'
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'

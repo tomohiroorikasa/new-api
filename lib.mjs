@@ -37,6 +37,8 @@ import 'dayjs/locale/ja.js'
 
 import validator from 'validator'
 
+import { validate as uuidValidate } from 'uuid'
+
 import sanitizeHtml from 'sanitize-html'
 
 import cloneDeep from 'clone-deep'
@@ -288,6 +290,21 @@ export const SetConfig = async (fastify, obj) => {
   return false
 }
 
+export const GetUid = async (fastify, req) => {
+  let ret = null
+  if (req.headers && req.headers['x-uid']) {
+    const uid = req.headers['x-uid']
+    if (uuidValidate(uid)) {
+      ret = uid
+    }
+  } else {
+    console.log('Not Found Uid')
+    // throw new Error('Not Found Uid')
+  }
+
+  return ret
+}
+
 export const CurrentUser = async (fastify, email) => {
   const user = await fastify.mongo.db.collection('Users').findOne({
     email: email,
@@ -312,73 +329,6 @@ export const IsAdmin = async (fastify, user) => {
   return false
 }
 
-export const AdUsers = async (fastify) => {
-  let ret = []
-  const adUsers = await fastify.mongo.db
-    .collection('Users')
-    .find({
-      external: { $exists: false },
-      isAd: true
-    })
-    .toArray()
-  if (adUsers.length > 0) {
-    for (let user of adUsers) {
-      ret.push(user._id)
-    }
-  }
-  return ret
-}
-
-export const BlockUsers = async (fastify, currentUser) => {
-  let ret = []
-  const blockingUsers = await fastify.mongo.db
-    .collection('Blocks')
-    .find({
-      userId: currentUser._id
-    })
-    .toArray()
-  if (blockingUsers.length > 0) {
-    for (let user of blockingUsers) {
-      ret.push(user.otherUserId)
-    }
-  }
-
-  const blockedUsers = await fastify.mongo.db
-    .collection('Blocks')
-    .find({
-      otherUserId: currentUser._id
-    })
-    .toArray()
-  if (blockedUsers.length > 0) {
-    for (let user of blockedUsers) {
-      ret.push(user.userId)
-    }
-  }
-
-  return ret
-}
-
-export const Followers = async (fastify, user) => {
-  let ret = []
-  const followers = await fastify.mongo.db
-    .collection('Follows')
-    .find({
-      otherUserId: user._id,
-    })
-    .sort({
-      followedAt: -1
-    })
-    .toArray()
-
-  if (followers.length > 0) {
-    for (let follow of followers) {
-      ret.push(follow.userId)
-    }
-  }
-
-  return ret
-}
-
 export const Admins = async (fastify) => {
   let ret = []
 
@@ -387,26 +337,6 @@ export const Admins = async (fastify) => {
   if (config.Admins) {
     for (const adminUser of config.Admins) {
       ret.push(adminUser._id)
-    }
-  }
-
-  return ret
-}
-
-export const Members = async (fastify, team) => {
-  let ret = []
-
-  const members = await fastify.mongo.db
-    .collection('Members')
-    .find({
-      teamId: team._id,
-      deleted: { $ne: true }
-    })
-    .toArray()
-
-  if (members.length > 0) {
-    for (let member of members) {
-      ret.push(member.userId)
     }
   }
 
@@ -457,7 +387,7 @@ export const ValidateData = (inputs, dataRules) => {
         if (fieldValue && !validator.isEmpty(fieldValue)) {
           incorrect = true
         }
-      } else if (rule === 'email') {
+      } else if (rule === 'isemail') {
         if (fieldValue && !validator.isEmail(fieldValue)) {
           incorrect = true
         }
@@ -516,6 +446,10 @@ export const ValidateData = (inputs, dataRules) => {
           } catch (e) {
             incorrect = true
           }
+        }
+      } else if (rule === 'isuuid') {
+        if (fieldValue && !uuidValidate(fieldValue)) {
+          incorrect = true
         }
       }
     }
@@ -1139,51 +1073,6 @@ export const ConvertImage = async (fastify, file, type) => {
   return _id
 }
 */
-
-export const GenerateNotice = async (fastify, req, action, currentUserId, toUserIds, postId, teamId) => {
-  let notice = {
-    action: action,
-    postedBy: currentUserId,
-    postedAt: new Date()
-  }
-
-  if (postId) {
-    notice.postId = postId
-  }
-  if (teamId) {
-    notice.teamId = teamId
-  }
-
-  for (const toUserId of toUserIds) {
-    notice.to = toUserId
-
-    const refuse = await fastify.mongo.db
-      .collection('Refuses')
-      .findOne({
-        userId: toUserId,
-        otherId: currentUserId,
-        deleted: { $ne: true },
-        refuse: true,
-      })
-    if (refuse) {
-      continue
-    }
-
-    await fastify.mongo.db
-      .collection('Notices')
-      .insertOne(Clone(notice))
-  }
-}
-
-export const EmitBackgroundNotice = async (fastify, action, notice) => {
-  try {
-    await fastify.io.emit('msg', `data:application/vnd.${action},${encodeURIComponent(JSON.stringify(notice))}`)
-  } catch (e) {
-    console.log(e)
-    return false
-  }
-  return true
-}
 
 export const FormatDocumentsAsString = (documents) => {
   return documents.map((document) => document.pageContent).join("\n")
