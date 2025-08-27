@@ -148,17 +148,17 @@ export default async function (fastify, opts) {
         {
           $match: matches
         }, {
-          /*
           $project: Object.assign({
             _id: 1,
             postedAt: 1,
           }, schema)
-          */
+          /*
           $project: {
             _id: 1,
             userId: 1,
             postedAt: 1,
           }
+          */
         }
       ]
 
@@ -198,10 +198,6 @@ export default async function (fastify, opts) {
 
       for (let message of messages) {
         let row = FilterData(message, schema)
-
-        if (String(row.userId) === String(currentUser._id)) {
-          row.sent = true
-        }
 
         ret.push(row)
       }
