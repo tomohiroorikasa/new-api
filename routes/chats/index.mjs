@@ -36,9 +36,7 @@ export default async function (fastify, opts) {
     let ret = {}
     try {
       const uid = await GetUid(fastify, req)
-      if (!uid) {
-        throw new Error('Empty Uid')
-      }
+      if (!uid) throw new Error('Empty Uid')
 
       const chat = await fastify.mongo.db
         .collection('Chats')
@@ -68,9 +66,7 @@ export default async function (fastify, opts) {
 
     try {
       const uid = await GetUid(fastify, req)
-      if (!uid) {
-        throw new Error('Empty Uid')
-      }
+      if (!uid) throw new Error('Empty Uid')
 
       let chat = {}
 
