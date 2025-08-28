@@ -1,5 +1,9 @@
 //import { wsAuthMiddleware } from '../plugins/socket.mjs'
 
+import axios from 'axios'
+
+import urlJoin from 'url-join'
+
 import { CurrentUser } from "../lib.mjs"
 
 import dayjs from 'dayjs'
@@ -33,6 +37,7 @@ export default async function (fastify, opts) {
     return { status: ret }
   })
 
+  /*
   fastify.get('/cache', async function (req, reply) {
     let ret = null
     try {
@@ -47,6 +52,27 @@ export default async function (fastify, opts) {
     } catch (e) {
       console.log(e)
       // ret = null
+    }
+
+    return { status: ret }
+  })
+  */
+
+  fastify.get('/bot', async function (req, reply) {
+    let ret = null
+
+    const botUrl = process.env.BOT_URI || 'http://localhost:3040'
+    const url = urlJoin(botUrl, '/status')
+
+    try {
+      const res = await axios.get(url, { timeout: 2000 })
+      if (res.data && res.data.alive) {
+        ret = 'ok'
+      } else {
+        ret = 'ng'
+      }
+    } catch (e) {
+      ret = 'ng'
     }
 
     return { status: ret }
