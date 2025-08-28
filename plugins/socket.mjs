@@ -8,7 +8,7 @@ export default fastifyPlugin(function (fastify, opts, done) {
   const allowedOrigins = envOrigins === '*'
     ? '*'
     : envOrigins.split(',').map(origin => origin.trim())
-
+console.log(allowedOrigins)
   fastify.io = new Server(fastify.server, {
     ...opts,
     cors: {

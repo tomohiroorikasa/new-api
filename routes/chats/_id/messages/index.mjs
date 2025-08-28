@@ -162,8 +162,8 @@ export default async function (fastify, opts) {
         }
       ]
 
+      let sort = {}
       if (req.query.sort) {
-        let sort = {}
         for (let field of req.query.sort.split(',')) {
           let order = 1
           if (field.substr(0, 1) === '-') {
@@ -172,8 +172,10 @@ export default async function (fastify, opts) {
           }
           sort[field] = order
         }
-        aggregate.push({ $sort: sort })
+      } else {
+        sort.postedAt = -1
       }
+      aggregate.push({ $sort: sort })
 
       let skip = 0
       if (req.query.skip) {
@@ -288,6 +290,9 @@ export default async function (fastify, opts) {
           }
         })
 
+      if (fastify.io && fastify.io.emit && fastify.io.to) {
+        fastify.io.emit('msg', 'data:application/vnd.msg,' + chat._id + '/' + ret._id)
+      }
     } catch (e) {
       console.log(e)
       reply.code(400).send(e)

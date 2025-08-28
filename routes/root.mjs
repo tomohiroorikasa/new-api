@@ -60,6 +60,20 @@ export default async function (fastify, opts) {
         if (pieces[0] === 'data') {
           if (pieces[1].match(/^application\/vnd\.(.+)/)) {
             let method = RegExp.$1
+
+            if (method === 'typ') {
+console.log('typ')
+              const [_chatId] = decodeURIComponent(pieces[2])
+              if (_chatId) {
+                ns.emit('msg', `data:application/vnd.typ,${_chatId}`)
+              }
+            } else if (method === 'send') {
+console.log('send')
+              const [_chatId, _messageId] = decodeURIComponent(pieces[2]).split('/')
+              if (_chatId && _messageId) {
+                ns.emit('msg', `data:application/vnd.msg,${encodeURIComponent(_chatId + '/' + _messageId)}`)
+              }
+            }
           }
         }
       } catch(e) {
