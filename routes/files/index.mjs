@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, CurrentUser, RecursiveEach } from '../../lib.mjs'
+import { IsBoolean, IsNumber, CurrentUser, RecursiveEach, SaveFile } from '../../lib.mjs'
 
 import reallyRelaxedJson from 'really-relaxed-json'
 const { toJson } = reallyRelaxedJson
@@ -103,5 +103,61 @@ export default async function (fastify, opts) {
       console.error(err)
       reply.code(400).send(err)
     }
+  })
+
+  fastify.post('/upload', async (req, reply) => {
+    let ret = {}
+
+    try {
+      const email = await fastify.auth0.checkSignIn(fastify, req.headers)
+      if (!email) throw new Error('Invalid Token')
+
+      const currentUser = await CurrentUser(fastify, email)
+      if (!currentUser) throw new Error('Not Found User')
+
+      let files = []
+      const uploadFiles = await req.files()
+
+      for await (const uploadFile of uploadFiles) {
+        const inserted = await fastify.mongo.db
+          .collection('Files')
+          .insertOne({
+            filename: uploadFile.filename,
+            encoding: uploadFile.encoding,
+            mimetype: uploadFile.mimetype,
+            // length: uploadFile.file.length,
+            postedBy: currentUser._id,
+            postedAt: new Date()
+          })
+
+        ret._id = inserted.insertedId
+
+        const fileId = inserted.insertedId
+
+        let fileInfo = { _id: fileId }
+
+        const _bufs = []
+        for await (const _buf of uploadFile.file) {
+          _bufs.push(_buf)
+        }
+        const buf = Buffer.concat(_bufs)
+
+        await SaveFile(String(fileId), buf, uploadFile.mimetype)
+
+        /*
+        const thumbnailId = await ThumbnailFile(fastify, fileId, buf, uploadFile.mimetype, [800, 800], { chatId: chat._id, type: 'message' })
+        if (thumbnailId) {
+          fileInfo.thumbnailId = thumbnailId
+        }
+        */
+
+        files.push(fileInfo)
+      }
+    } catch (e) {
+      console.log(e)
+      reply.code(400).send(e)
+    }
+
+    return ret
   })
 }
