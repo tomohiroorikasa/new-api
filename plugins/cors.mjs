@@ -2,14 +2,14 @@ import fastifyPlugin from 'fastify-plugin'
 
 import Cors from '@fastify/cors'
 
-export default fastifyPlugin(function (fastify, opts, done) {
+export default fastifyPlugin(async (fastify, opts) => {
   let envOrigins = process.env.ORIGIN || process.env.ORIGINS || '*'
 
   const allowedOrigins = envOrigins === '*'
     ? '*'
     : envOrigins.split(',').map(origin => origin.trim())
 
-  fastify.register(Cors, {
+  await fastify.register(Cors, {
     origin: (origin, cb) => {
       if (!origin || allowedOrigins === '*' || (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin))) {
         cb(null, true)
@@ -22,17 +22,13 @@ export default fastifyPlugin(function (fastify, opts, done) {
   })
 
   /*
-  fastify.addHook('onSend', (request, reply, payload, done) => {
+  fastify.addHook('onSend', async (request, reply, payload) => {
     // console.log('Origin:', request.headers.origin)
     // console.log('Access-Control-Allow-Origin:', reply.getHeader('Access-Control-Allow-Origin'))
-    done()
   })
 
-  fastify.addHook('onRequest', (request, reply, done) => {
+  fastify.addHook('onRequest', async (request, reply) => {
     // console.log('Origin (onRequest):', request.headers.origin)
-    done()
   })
   */
-
-  done()
 })

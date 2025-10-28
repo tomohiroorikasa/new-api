@@ -9,7 +9,7 @@ import 'dayjs/locale/ja.js'
 dayjs.extend(utc)
 dayjs.locale('ja')
 
-export default fastifyPlugin(function (fastify, opts, done) {
+export default fastifyPlugin(async (fastify, opts) => {
   const domain = process.env.AUTH0_DOMAIN
   const audience = process.env.AUTH0_AUDIENCE
   const clientId = process.env.AUTH0_CLIENT_ID
@@ -213,6 +213,4 @@ export default fastifyPlugin(function (fastify, opts, done) {
       return email
     }
   }
-
-  done()
 })
