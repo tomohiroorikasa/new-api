@@ -308,7 +308,6 @@ export const GetUid = async (fastify, req) => {
 export const CurrentUser = async (fastify, email) => {
   const user = await fastify.mongo.db.collection('Users').findOne({
     email: email,
-    external: { $exists: false },
     deleted: { $ne: true }
   })
 

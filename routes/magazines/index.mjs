@@ -22,18 +22,20 @@ const useFullText = process.env.DB_FULLTEXT === '1'
 const useAtlasSearch = process.env.DB_ATLASSEARCH === '1'
 
 const schema = {
-  draft: 1,
-  type: 1,
+  // draft: 1,
+  // type: 1,
   title: 1,
   description: 1,
-  links: 1,
+  files: 1,
 }
 
 const postRules = {
+  /*
   draft: {
     isBoolean: true
   },
-  type: {},
+  */
+  // type: {},
   title: {
     // required: true,
     maxLength: 400,
@@ -42,9 +44,6 @@ const postRules = {
     // required: true,
     maxLength: 5000,
     // isHTML: true
-  },
-  force: {
-    isBoolean: true
   },
 }
 
@@ -58,41 +57,19 @@ export default async function (fastify, opts) {
         // throw new Error('Invalid Token')
       }
 
+      let currentUser
+      if (email) {
+        currentUser = await CurrentUser(fastify, email)
+        if (!currentUser) throw new Error('Not Found User')
+      }
+
       // const config = await GetConfig(fastify)
       // if (!config.isOpen && !email) throw new Error('Need Login')
 
       let matches = {
         $and: [
-          { parentId: { $exists: false } },
-          // { deleted: { $ne: true } }
+          { deleted: { $ne: true } }
         ]
-      }
-
-      let currentUser
-      let blockUsers
-      if (email) {
-        currentUser = await CurrentUser(fastify, email)
-        if (currentUser) {
-          blockUsers = await BlockUsers(fastify, currentUser)
-        }
-      }
-
-      if (!currentUser) {
-        matches.$and.push({
-          draft: { $ne: true }
-        })
-      } else {
-        matches.$and.push({
-          $or: [{
-            draft: { $ne: true },
-          }, {
-            postedBy: currentUser._id
-          }]
-        })
-      }
-
-      if (currentUser && blockUsers && blockUsers.length > 0) {
-        matches.$and.push({ postedBy: { $nin: blockUsers } })
       }
 
       let isSearch = false
@@ -213,41 +190,19 @@ export default async function (fastify, opts) {
         // throw new Error('Invalid Token')
       }
 
+      let currentUser
+      if (email) {
+        currentUser = await CurrentUser(fastify, email)
+        if (!currentUser) throw new Error('Not Found User')
+      }
+
       // const config = await GetConfig(fastify)
       // if (!config.isOpen && !email) throw new Error('Need Login')
 
       let matches = {
         $and: [
-          { parentId: { $exists: false } },
-          // { deleted: { $ne: true } }
+          { deleted: { $ne: true } }
         ]
-      }
-
-      let currentUser
-      let blockUsers
-      if (email) {
-        currentUser = await CurrentUser(fastify, email)
-        if (currentUser) {
-          blockUsers = await BlockUsers(fastify, currentUser)
-        }
-      }
-
-      if (!currentUser) {
-        matches.$and.push({
-          draft: { $ne: true }
-        })
-      } else {
-        matches.$and.push({
-          $or: [{
-            draft: { $ne: true },
-          }, {
-            postedBy: currentUser._id
-          }]
-        })
-      }
-
-      if (currentUser && blockUsers && blockUsers.length > 0) {
-        matches.$and.push({ postedBy: { $nin: blockUsers } })
       }
 
       let isSearch = false
@@ -470,5 +425,44 @@ export default async function (fastify, opts) {
     }
 
     return data
+  })
+
+  fastify.post('/', async (req, reply) => {
+    let ret = {}
+
+    try {
+      const email = await fastify.auth0.checkSignIn(fastify, req.headers)
+      if (!email) throw new Error('Invalid Token')
+
+      const currentUser = await CurrentUser(fastify, email)
+      if (!currentUser) throw new Error('Not Found User')
+
+      if (!req.body) throw new Error('Empty Body')
+
+      const [isValid, incorrects, data] = ValidateData(req.body, postRules)
+      if (!isValid) {
+        throw new Error(`Incorrect Parameters - ${incorrects.join(',')}`)
+      }
+
+      // const config = await GetConfig(fastify)
+      // if (!config.isOpen && !email) throw new Error('Need Login')
+
+      data.postedBy = currentUser._id
+      data.postedAt = new Date()
+
+      const inserted = await fastify.mongo.db
+        .collection('Magazines')
+        .insertOne(data)
+
+      data._id = inserted.insertedId
+
+      ret = Object.assign({}, data)
+    } catch (e) {
+      console.error(e)
+      reply.code(400).send(e)
+      return
+    }
+
+    return ret
   })
 }

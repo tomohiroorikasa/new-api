@@ -150,7 +150,6 @@ export default fastifyPlugin(async (fastify, opts) => {
           }
 
           const res = await axios.get(url, config)
-
           if (res && res.data) {
             email = res.data.email
 
