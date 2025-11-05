@@ -2,7 +2,7 @@ import * as crypto from 'node:crypto'
 
 import urlJoin from 'url-join'
 
-import { IsBoolean, IsNumber, Clone, GetConfig, ValidateData, RecursiveEach, AutoTags, StripHtmlTags, ExtractLink, FormatDocumentsAsString } from '../../lib.mjs'
+import { IsBoolean, IsNumber, Clone, GetConfig, CurrentUser, ValidateData, RecursiveEach, AutoTags, StripHtmlTags, ExtractLink, FormatDocumentsAsString } from '../../lib.mjs'
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
@@ -61,38 +61,16 @@ export default async function (fastify, opts) {
       // const config = await GetConfig(fastify)
       // if (!config.isOpen && !email) throw new Error('Need Login')
 
-      let matches = {
-        $and: [
-          { parentId: { $exists: false } },
-          // { deleted: { $ne: true } }
-        ]
-      }
-
       let currentUser
-      let blockUsers
       if (email) {
         currentUser = await CurrentUser(fastify, email)
-        if (currentUser) {
-          blockUsers = await BlockUsers(fastify, currentUser)
-        }
+        if (!currentUser) throw new Error('Not Found User')
       }
 
-      if (!currentUser) {
-        matches.$and.push({
-          draft: { $ne: true }
-        })
-      } else {
-        matches.$and.push({
-          $or: [{
-            draft: { $ne: true },
-          }, {
-            postedBy: currentUser._id
-          }]
-        })
-      }
-
-      if (currentUser && blockUsers && blockUsers.length > 0) {
-        matches.$and.push({ postedBy: { $nin: blockUsers } })
+      let matches = {
+        $and: [
+          { deleted: { $ne: true } }
+        ]
       }
 
       let isSearch = false
@@ -218,36 +196,14 @@ export default async function (fastify, opts) {
 
       let matches = {
         $and: [
-          { parentId: { $exists: false } },
-          // { deleted: { $ne: true } }
+          { deleted: { $ne: true } }
         ]
       }
 
       let currentUser
-      let blockUsers
       if (email) {
         currentUser = await CurrentUser(fastify, email)
-        if (currentUser) {
-          blockUsers = await BlockUsers(fastify, currentUser)
-        }
-      }
-
-      if (!currentUser) {
-        matches.$and.push({
-          draft: { $ne: true }
-        })
-      } else {
-        matches.$and.push({
-          $or: [{
-            draft: { $ne: true },
-          }, {
-            postedBy: currentUser._id
-          }]
-        })
-      }
-
-      if (currentUser && blockUsers && blockUsers.length > 0) {
-        matches.$and.push({ postedBy: { $nin: blockUsers } })
+        if (!currentUser) throw new Error('Not Found User')
       }
 
       let isSearch = false
@@ -470,5 +426,44 @@ export default async function (fastify, opts) {
     }
 
     return data
+  })
+
+  fastify.post('/', async (req, reply) => {
+    let ret = {}
+
+    try {
+      const email = await fastify.auth0.checkSignIn(fastify, req.headers)
+      if (!email) throw new Error('Invalid Token')
+
+      const currentUser = await CurrentUser(fastify, email)
+      if (!currentUser) throw new Error('Not Found User')
+
+      if (!req.body) throw new Error('Empty Body')
+
+      const [isValid, incorrects, data] = ValidateData(req.body, postRules)
+      if (!isValid) {
+        throw new Error(`Incorrect Parameters - ${incorrects.join(',')}`)
+      }
+
+      // const config = await GetConfig(fastify)
+      // if (!config.isOpen && !email) throw new Error('Need Login')
+
+      data.postedBy = currentUser._id
+      data.postedAt = new Date()
+
+      const inserted = await fastify.mongo.db
+        .collection('Infos')
+        .insertOne(data)
+
+      data._id = inserted.insertedId
+
+      ret = Object.assign({}, data)
+    } catch (e) {
+      console.error(e)
+      reply.code(400).send(e)
+      return
+    }
+
+    return ret
   })
 }

@@ -187,4 +187,100 @@ export default async function (fastify, opts) {
 
     return ret
   })
+
+  fastify.patch('/', async (req, reply) => {
+    let ret = {}
+
+    try {
+      const email = await fastify.auth0.checkSignIn(fastify, req.headers)
+      if (!email) throw new Error('Invalid Token')
+
+      const currentUser = await CurrentUser(fastify, email)
+      if (!currentUser) throw new Error('Not Found User')
+
+      if (!req.body) throw new Error('Empty Body')
+
+      let oldData = await fastify.mongo.db
+        .collection('Infos')
+        .findOne({
+          _id: new fastify.mongo.ObjectId(req.params.id),
+          deleted: { $ne: true }
+        })
+      if (!oldData) throw new Error('Not Found Data')
+
+      const [isValid, incorrects, newData] = ValidateData(req.body, patchRules)
+      if (!isValid) {
+        throw new Error(`Incorrect Parameters - ${incorrects.join(',')}`)
+      }
+
+      // const config = await GetConfig(fastify)
+      // if (!config.isOpen && !email) throw new Error('Need Login')
+
+      newData.patchedBy = currentUser._id
+      newData.patchedAt = new Date()
+
+      const inserted = await fastify.mongo.db
+        .collection('Infos')
+        .updateOne({
+          _id: oldData._id,
+        }, {
+          $set: newData
+        })
+
+      newData._id = inserted.insertedId
+
+      ret = Object.assign({}, newData)
+    } catch (e) {
+      console.error(e)
+      reply.code(400).send(e)
+      return
+    }
+
+    return ret
+  })
+
+  fastify.delete('/', async (req, reply) => {
+    let ret = {}
+
+    try {
+      const email = await fastify.auth0.checkSignIn(fastify, req.headers)
+      if (!email) throw new Error('Invalid Token')
+
+      const currentUser = await CurrentUser(fastify, email)
+      if (!currentUser) throw new Error('Not Found User')
+
+      let data = await fastify.mongo.db
+        .collection('Infos')
+        .findOne({
+          _id: new fastify.mongo.ObjectId(req.params.id),
+          deleted: { $ne: true }
+        })
+      if (!data) throw new Error('Not Found Data')
+
+      // const config = await GetConfig(fastify)
+      // if (!config.isOpen && !email) throw new Error('Need Login')
+
+      data,deleted = true
+      data.deletedBy = currentUser._id
+      data.deletedAt = new Date()
+
+      const inserted = await fastify.mongo.db
+        .collection('Infos')
+        .updateOne({
+          _id: oldData._id,
+        }, {
+          $set: newData
+        })
+
+      newData._id = inserted.insertedId
+
+      ret = Object.assign({}, newData)
+    } catch (e) {
+      console.error(e)
+      reply.code(400).send(e)
+      return
+    }
+
+    return ret
+  })
 }
